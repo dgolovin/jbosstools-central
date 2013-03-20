@@ -11,7 +11,9 @@
 package org.jboss.tools.central.internal.discovery;
 
 import org.eclipse.mylyn.internal.discovery.core.model.ValidationException;
+import org.eclipse.osgi.util.NLS;
 import org.jboss.tools.central.JBossCentralActivator;
+import org.jboss.tools.central.internal.xpl.ExpressionResolutionException;
 import org.jboss.tools.central.internal.xpl.ExpressionResolver;
 
 /**
@@ -23,14 +25,12 @@ public class DiscoveryConnector extends org.eclipse.mylyn.internal.discovery.cor
 
 	@Override
 	public void validate() throws ValidationException {
-		if (siteUrl != null) {
-			try {
-				siteUrl = ExpressionResolver.DEFAULT_RESOLVER.resolve(siteUrl);
-			} catch (Exception e) {
-				JBossCentralActivator.log(e);
-			}
+		try {
+			siteUrl = ExpressionResolver.DEFAULT_RESOLVER.resolve(siteUrl);
+			super.validate();
+		} catch (ExpressionResolutionException e) {
+			new ValidationException(NLS.bind("URL ''{0}'' use expression resolved with error: \"{1}", siteUrl,e.getMessage()));
 		}
-		super.validate();
 	}
 
 }
