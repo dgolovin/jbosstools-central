@@ -36,5 +36,4 @@ public class JBossBundleDiscoveryStrategy extends BundleDiscoveryStrategy {
 		processor.processExtensions(monitor, extensions, connectors,
 				categories, certifications);
 	}
-
 }

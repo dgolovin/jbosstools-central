@@ -19,7 +19,11 @@ import org.eclipse.mylyn.internal.discovery.core.model.RemoteBundleDiscoveryStra
 /**
  * 
  * @author snjeza
+<<<<<<< HEAD
  * 
+=======
+ *
+>>>>>>> 692068827250ddfbeb6177c50fde325d6dcea0be
  */
 public class JBossRemoteBundleDiscoveryStrategy extends
 		RemoteBundleDiscoveryStrategy {

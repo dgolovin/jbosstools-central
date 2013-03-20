@@ -32,5 +32,4 @@ public class DiscoveryConnector extends org.eclipse.mylyn.internal.discovery.cor
 			new ValidationException(NLS.bind("URL ''{0}'' use expression resolved with error: \"{1}", siteUrl,e.getMessage()));
 		}
 	}
-
 }
