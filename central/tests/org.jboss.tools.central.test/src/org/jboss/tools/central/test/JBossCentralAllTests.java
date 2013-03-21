@@ -16,9 +16,9 @@ import org.junit.runners.Suite;
 
 
 @Suite.SuiteClasses({
-	CentralTest.class,
+//	CentralTest.class,
 	ExpressionResolverTest.class,
-	DiscoveryTest.class,
+//	DiscoveryTest.class,
 })
 
 @RunWith(Suite.class)
