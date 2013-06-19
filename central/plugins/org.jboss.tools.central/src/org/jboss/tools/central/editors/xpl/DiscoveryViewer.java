@@ -122,10 +122,11 @@ import org.eclipse.ui.forms.IFormColors;
 import org.eclipse.ui.progress.WorkbenchJob;
 import org.eclipse.ui.statushandlers.StatusManager;
 import org.eclipse.ui.themes.IThemeManager;
-import org.jboss.tools.central.internal.discovery.ChainedDiscoveryStrategy;
-import org.jboss.tools.central.internal.discovery.ChainedDiscoveryStrategy.DataCollector;
-import org.jboss.tools.central.internal.discovery.ExpressionBasedBundleDiscoveryStrategy;
-import org.jboss.tools.central.internal.discovery.ExpressionBasedRemoteBundleDiscoveryStrategy;
+import org.jboss.tools.project.examples.internal.discovery.ChainedDiscoveryStrategy;
+import org.jboss.tools.project.examples.internal.discovery.ChainedDiscoveryStrategy.DataCollector;
+import org.jboss.tools.project.examples.internal.discovery.ChainedDiscoveryStrategy.DiscoveryConnectorCollector;
+import org.jboss.tools.project.examples.internal.discovery.ExpressionBasedBundleDiscoveryStrategy;
+import org.jboss.tools.project.examples.internal.discovery.ExpressionBasedRemoteBundleDiscoveryStrategy;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.Version;
 
@@ -1600,28 +1601,6 @@ public class DiscoveryViewer {
 
 	protected Set<String> getInstalledFeatures(IProgressMonitor monitor) throws InterruptedException {
 		return DiscoveryUi.createInstallJob().getInstalledFeatures(monitor);
-	}
-
-	private final class DiscoveryConnectorCollector implements DataCollector {
-		
-		private boolean isComplete;
-		
-		private boolean allowDuplicates;
-		
-		public DiscoveryConnectorCollector(boolean allowDuplicates) {
-			this.allowDuplicates = allowDuplicates;
-		}
-		
-		@Override
-		public boolean isComplete() {
-			return isComplete && !allowDuplicates;
-		}
-
-		@Override
-		public void collectData(AbstractDiscoveryStrategy ds) {
-			List<DiscoveryConnector> collected = ds.getConnectors();
-			isComplete = (collected != null && !collected.isEmpty());
-		}		
 	}
 
 }

@@ -67,6 +67,10 @@ import org.eclipse.ui.browser.IWorkbenchBrowserSupport;
 import org.eclipse.ui.dialogs.PreferencesUtil;
 import org.jboss.tools.project.examples.Messages;
 import org.jboss.tools.project.examples.ProjectExamplesActivator;
+import org.jboss.tools.project.examples.internal.discovery.ChainedDiscoveryStrategy;
+import org.jboss.tools.project.examples.internal.discovery.ExpressionBasedBundleDiscoveryStrategy;
+import org.jboss.tools.project.examples.internal.discovery.ExpressionBasedRemoteBundleDiscoveryStrategy;
+import org.jboss.tools.project.examples.internal.discovery.ChainedDiscoveryStrategy.DiscoveryConnectorCollector;
 import org.jboss.tools.project.examples.model.ProjectExample;
 import org.jboss.tools.project.examples.model.ProjectFix;
 import org.jboss.tools.runtime.core.RuntimeCoreActivator;
@@ -75,6 +79,8 @@ import org.jboss.tools.runtime.ui.RuntimeUIActivator;
 import org.jboss.tools.runtime.ui.internal.wizard.DownloadRuntimesWizard;
 
 public class NewProjectExamplesRequirementsPage extends WizardPage implements IProjectExamplesWizardPage {
+
+	private static boolean ALLOW_DUPLICATE_DISCOVERY_CONNECTORS = Boolean.getBoolean("org.jboss.tools.central.allow.duplicate.connectors");
 
 	private static final String PAGE_NAME = "org.jboss.tools.project.examples.requirements"; //$NON-NLS-1$
 	protected ProjectExample projectExample;
@@ -490,12 +496,20 @@ public class NewProjectExamplesRequirementsPage extends WizardPage implements IP
 			public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
 				connectorDiscoveries[0] = new ConnectorDiscovery();
 
-				// look for descriptors from installed bundles
-				connectorDiscoveries[0].getDiscoveryStrategies().add(new BundleDiscoveryStrategy());
+				ChainedDiscoveryStrategy chainedDiscoveryStrategy = new ChainedDiscoveryStrategy(new DiscoveryConnectorCollector(ALLOW_DUPLICATE_DISCOVERY_CONNECTORS));
 
-				RemoteBundleDiscoveryStrategy remoteDiscoveryStrategy = new RemoteBundleDiscoveryStrategy();
-				remoteDiscoveryStrategy.setDirectoryUrl(ProjectExamplesActivator.getDefault().getConfigurator().getJBossDiscoveryDirectory());
-				connectorDiscoveries[0].getDiscoveryStrategies().add(remoteDiscoveryStrategy);
+				String directoryUrl = ProjectExamplesActivator.getDefault().getConfigurator().getJBossDiscoveryDirectory();
+				// look for remote descriptor first
+				if (directoryUrl  != null) {
+					ExpressionBasedRemoteBundleDiscoveryStrategy remoteDiscoveryStrategy = new ExpressionBasedRemoteBundleDiscoveryStrategy();
+					remoteDiscoveryStrategy.setDirectoryUrl(directoryUrl);
+					chainedDiscoveryStrategy.addStrategy(remoteDiscoveryStrategy);
+				}
+
+				// look for descriptors from installed bundles
+				connectorDiscoveries[0].getDiscoveryStrategies().add(new ExpressionBasedBundleDiscoveryStrategy());
+
+				connectorDiscoveries[0].getDiscoveryStrategies().add(chainedDiscoveryStrategy);
 
 				connectorDiscoveries[0].setEnvironment(ProjectExamplesActivator.getEnvironment());
 				connectorDiscoveries[0].setVerifyUpdateSiteAvailability(true);
