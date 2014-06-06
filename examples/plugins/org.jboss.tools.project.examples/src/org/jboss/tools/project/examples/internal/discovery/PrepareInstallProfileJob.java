@@ -128,7 +128,7 @@ public class PrepareInstallProfileJob extends AbstractInstallJob {
 				}
 
 				checkCancelled(monitor);
-
+				monitor.worked(100);
 				Display.getDefault().asyncExec(new Runnable() {
 					public void run() {
 						if (installOperation != null) {
