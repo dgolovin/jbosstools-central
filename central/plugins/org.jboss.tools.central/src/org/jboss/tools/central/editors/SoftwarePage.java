@@ -34,6 +34,7 @@ import org.eclipse.jface.operation.IRunnableContext;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.operation.ModalContext;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
+import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.mylyn.commons.core.DelegatingProgressMonitor;
 import org.eclipse.mylyn.internal.discovery.core.model.ConnectorDescriptor;
@@ -494,25 +495,19 @@ public class SoftwarePage extends AbstractJBossCentralPage implements IRunnableC
 			try {
 				setEnabled(false);
 				SoftwarePage.setEnabled(installButton, false);
-				dialog.run(true, false, new IRunnableWithProgress() {
-					@Override
-					public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
-						monitor.setTaskName(Messages.DiscoveryViewer_waitingForDiscoveryCompletion);
-						for (ConnectorDescriptorItemUi item : discoveryViewer.getAllConnectorsItemsUi()) {
-							// Calling this methods waits synchronously for jobs to finish and avoid conflict
-							// Cf JBIDE-17496, JBIDE-17504, Eclipse #436378
-							// When we use a p2 version with bug #436378 fixed, we should remove that to save much time
-							item.getConnectorUnits();
-						}
-					}						
-				});
+
+				monitor.setTaskName(Messages.DiscoveryViewer_waitingForDiscoveryCompletion);
+				IStructuredSelection sel = discoveryViewer.getSelection();
+				for (Object item : discoveryViewer.getSelection().toList()) {
+					// Calling this methods waits synchronously for jobs to finish and avoid conflict
+					// Cf JBIDE-17496, JBIDE-17504, Eclipse #436378
+					// When we use a p2 version with bug #436378 fixed, we should remove that to save much time
+					((ConnectorDescriptorItemUi)item).getConnectorUnits();
+				}
+
 				List<ConnectorDescriptor> toInstall = new ArrayList<ConnectorDescriptor>(discoveryViewer.getInstallableConnectors());
 				toInstall.addAll(discoveryViewer.getUpdatableConnectors());
 				JBossDiscoveryUi.install(toInstall, dialog);
-			} catch (InterruptedException ex) {
-                JBossCentralActivator.getDefault().getLog().log(new Status(IStatus.ERROR, JBossCentralActivator.ID, ex.getMessage(), ex));
-			} catch (InvocationTargetException ite) {
-                JBossCentralActivator.getDefault().getLog().log(new Status(IStatus.ERROR, JBossCentralActivator.ID, ite.getMessage(), ite));
 			} finally {
 				setEnabled(true);
 				updateInstallButton();

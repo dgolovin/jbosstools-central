@@ -213,6 +213,10 @@ public class DiscoveryViewer extends Viewer {
 		createEnvironment();
 	}
 
+	public ConnectorDescriptorItemUi getConnectorDescriptorUi(DiscoveryConnector con) {
+		return itemsUi.get(con);
+	}
+	
 	public void selectAll() {
 		for(ConnectorDescriptorItemUi itemUi:itemsUi.values()) {
 			itemUi.select(true);
@@ -915,11 +919,10 @@ public class DiscoveryViewer extends Viewer {
 	 */
 	@Override
 	public IStructuredSelection getSelection() {
+		
 		List<ConnectorDescriptorItemUi> elements = new ArrayList<ConnectorDescriptorItemUi>();
-		for (ConnectorDescriptorItemUi item : elements) {
-			if (item.getConnector().isSelected()) {
-				elements.add(item);
-			}
+		for (ConnectorDescriptor item : installableConnectors) {
+			elements.add(itemsUi.get(item));
 		}
 		return new StructuredSelection(elements);
 	}
