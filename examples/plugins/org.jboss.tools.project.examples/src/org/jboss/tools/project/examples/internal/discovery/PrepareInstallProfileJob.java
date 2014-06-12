@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubMonitor;
@@ -105,44 +106,43 @@ public class PrepareInstallProfileJob extends AbstractInstallJob {
 		if (installableConnectors.isEmpty()) {
 			throw new IllegalArgumentException("There are no connectors to install");
 		}
-
+		progressMonitor.beginTask("a task", 550+this.installableConnectors.size());
+		final SubMonitor monitor = SubMonitor.convert(progressMonitor, Messages.InstallConnectorsJob_task_configuring,550+this.installableConnectors.size()
+				);
 		try {
-			final SubMonitor monitor = SubMonitor.convert(progressMonitor, Messages.InstallConnectorsJob_task_configuring,
-					100);
-			try {
-				final IInstallableUnit[] ius = computeInstallableUnits(monitor.newChild(50));
+			final IInstallableUnit[] ius = computeInstallableUnits(monitor.newChild(50));
 
-				checkCancelled(monitor);
+			checkCancelled(monitor);
 
-				final InstallOperation installOperation = resolveInstall(monitor.newChild(50), ius,
-						repositoryLocations.toArray(new URI[0]));
-				
-				checkCancelled(monitor);
-				
-				final RemediationOperation[] rops = new RemediationOperation[1];
-				rops[0] = null;
-				if (installOperation != null && installOperation.getResolutionResult().getSeverity() == IStatus.ERROR) {
-					rops[0] = new RemediationOperation(ProvisioningUI.getDefaultUI()
-							.getSession(), installOperation.getProfileChangeRequest());
-					rops[0].resolveModal(monitor.newChild(500));
-				}
-
-				checkCancelled(monitor);
-				monitor.worked(100);
-				Display.getDefault().asyncExec(new Runnable() {
-					public void run() {
-						if (installOperation != null) {
-							IProvisioningPlan plan = installOperation.getProvisioningPlan();
-							ProvisioningContext context = installOperation.getProvisioningContext();
-							ProvUI.getSize(ProvUI.getEngine(ProvisioningUI.getDefaultUI()
-									.getSession()), plan, context, monitor);
-						}
-						openInstallWizard(Arrays.asList(ius), installOperation, rops[0], null);
-					}
-				});
-			} finally {
-				monitor.done();
+			final InstallOperation installOperation = resolveInstall(monitor.newChild(this.installableConnectors.size()), ius,
+					repositoryLocations.toArray(new URI[0]));
+			
+			checkCancelled(monitor);
+			
+			RemediationOperation rop = null;
+			if(installOperation.getResolutionResult().getSeverity() == IStatus.ERROR) {
+				rop = new RemediationOperation(ProvisioningUI.getDefaultUI()
+						.getSession(), installOperation.getProfileChangeRequest());
+				rop.resolveModal(monitor.newChild(500));
+			} else {
+				monitor.setWorkRemaining(0);
 			}
+
+			checkCancelled(monitor);
+			
+			final RemediationOperation temp = rop;
+			
+			Display.getDefault().asyncExec(new Runnable() {
+				public void run() {
+					if (installOperation != null) {
+						IProvisioningPlan plan = installOperation.getProvisioningPlan();
+						ProvisioningContext context = installOperation.getProvisioningContext();
+						ProvUI.getSize(ProvUI.getEngine(ProvisioningUI.getDefaultUI()
+								.getSession()), plan, context,  new NullProgressMonitor());
+					}
+					openInstallWizard(Arrays.asList(ius), installOperation, temp, null);
+				}
+			});
 		} catch (OperationCanceledException e) {
 			throw new InterruptedException();
 		} catch (Exception e) {
@@ -263,7 +263,6 @@ public class PrepareInstallProfileJob extends AbstractInstallJob {
 
 	public IInstallableUnit[] computeInstallableUnits(SubMonitor monitor) throws CoreException {
 		try {
-			monitor.setWorkRemaining(100);
 			// add repository urls and load meta data
 			List<IMetadataRepository> repositories = addRepositories(monitor.newChild(50));
 			final List<IInstallableUnit> installableUnits = queryInstallableUnits(monitor.newChild(50), repositories);

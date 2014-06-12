@@ -53,13 +53,11 @@ public class JBossDiscoveryUi {
 
 	public static boolean install(final List<ConnectorDescriptor> descriptors, IRunnableContext context) {
 			final IRunnableWithProgress runner = createInstallJob(descriptors);
-			Job install = new Job("Preparing for installation") {
+			Job install = new Job("Preparing installation") {
 				@Override
 				protected IStatus run(IProgressMonitor monitor) {
 					try {
 						runner.run(monitor);
-						monitor.done();
-						
 					} catch (InvocationTargetException e) {
 						IStatus status = new Status(IStatus.ERROR, ProjectExamplesActivator.PLUGIN_ID, NLS.bind(
 								Messages.ConnectorDiscoveryWizard_installProblems, new Object[] { e.getCause().getMessage() }),
@@ -67,6 +65,8 @@ public class JBossDiscoveryUi {
 						StatusManager.getManager().handle(status, StatusManager.SHOW | StatusManager.BLOCK | StatusManager.LOG);
 						return status;
 					} catch (InterruptedException e) {
+					} finally {
+						monitor.done();
 					}
 					return Status.OK_STATUS;
 				}
@@ -80,8 +80,9 @@ public class JBossDiscoveryUi {
 					recordInstalled(descriptors);
 				}
 			});
+			install.setUser(true);
 			install.schedule();
-			PlatformUI.getWorkbench().getProgressService().showInDialog(null,install);
+			//PlatformUI.getWorkbench().getProgressService().showInDialog(null,install);
 				
 			// update stats
 			
